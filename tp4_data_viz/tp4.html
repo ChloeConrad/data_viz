@@ -1,0 +1,122 @@
+<head>
+    <meta charset="utf-8" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<style>
+   
+    
+</style>
+<body>
+
+</body>
+<script>
+function createAdjacencyMatrix(nodes,edges) {
+	var edgeHash = {};
+	for (x in edges) {
+		var id = edges[x].source + "-" + edges[x].target;
+		edgeHash[id] = edges[x];
+	}
+	matrix = [];
+	//create all possible edges
+	for (const [a, node_a] of nodes.entries()) {
+		for (const [b, node_b] of nodes.entries()) {
+		var grid = {id: node_a.id + "-" + node_b.id, x: a, y: b, sharedfollowers: 0};
+		if (edgeHash[grid.id]) {
+			grid.sharedfollowers = parseInt(edgeHash[grid.id].sharedfollowers);
+		}
+		matrix.push(grid);
+		}
+	}
+	return matrix;
+	}
+    var color = d3.scaleQuantize(d3.schemeBuPu[9]);
+    d3.csv("liens.csv").then(function (dataLink) {
+        d3.csv("noeuds.csv").then(function(dataNode) {
+        
+        color.domain([
+        0,
+        d3.max(dataLink, function (d) {
+          return parseInt(d.sharedfollowers);
+        })
+      ]);
+
+      console.log(color.domain())
+
+      var matrix = createAdjacencyMatrix(dataNode,dataLink)
+      console.log(matrix)
+
+      var svg = d3
+      .select("body")
+      .append("svg")
+
+    var matriceElt = d3.select("svg")
+        .attr("width",1000)
+        .attr("height",1000)
+        .append("g")
+        .attr("transform", "translate(50,50)")
+        .attr("id", "adjacencyMatrix");
+
+    
+    matriceElt.selectAll("rect")
+    .data(matrix)
+    .enter()
+    .append("rect")
+        .attr("width",25)
+        .attr("height",25)
+        .attr("stroke", "black") // Couleur du contour
+        .attr("stroke-width", 0)
+        .attr("x", function (d) {
+            return d.x*25;
+        })
+       .attr("y", function (d) {
+        return d.y*25;
+       })
+       .style("fill",function (d){
+        return color(parseInt(d.sharedfollowers))
+       });
+
+    d3.selectAll("rect")
+       .on('mouseover', function(e, d) {
+            console.log(e)
+            d3.select(this).attr("stroke-width",2);
+       })
+       .on('mouseout',function (e,d){
+            d3.select(this).attr("stroke-width",0);
+       })
+
+    
+
+
+
+    var scaleSize = dataNode.length * 25; 
+
+    x = d3.scaleBand()
+    		.domain(dataNode.map(function (el) {return el.id}))
+    		.range([0, scaleSize])
+    y = d3.scaleBand()
+    		.domain(dataNode.map(function (el) {return el.id}).reverse()) // reverse() inverse l'ordre des éléments pour que l'affichage se fasse dans le bon ordre en x : testez sans pour voir ce qui se passe.
+    		.range([scaleSize, 0])
+	
+    d3.select("#adjacencyMatrix")
+		.append("g")
+		.attr("transform", `translate(0,${scaleSize})`) //TODO changer X et Y pour positionner correctement l'axe
+		.call(d3.axisBottom(x))   
+        .selectAll('text')
+        .style("text-anchor","start")
+        .attr('transform','rotate(45) translate(10,0)' )       
+		
+	d3.select("#adjacencyMatrix")
+		.append("g")
+		.call(d3.axisLeft(y))
+    });
+
+    
+
+
+
+
+            
+    });
+
+    
+</script>
